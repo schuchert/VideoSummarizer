@@ -1,6 +1,6 @@
 # Video to YouTube Title + Summary Pipeline
 
-Automated workflow for macOS. Start with the setup script, then run `process_videos.zsh` to summarize recent videos from your downloads folder.
+Automated workflow for macOS. Start with the setup script, then run `scripts/process_videos.zsh` to summarize recent videos from your downloads folder.
 
 ## Features
 
@@ -16,7 +16,7 @@ Automated workflow for macOS. Start with the setup script, then run `process_vid
 ./setup/setup.zsh
 ```
 
-Prefer to do the steps manually? Follow [Manual Setup](MANUAL_SETUP.md).
+Prefer to do the steps manually? Follow [Manual Setup](docs/MANUAL_SETUP.md).
 
 Note: This project uses `gdate` (GNU date) for consistent timestamp handling. The setup script installs it via Homebrew `coreutils`.
 
@@ -45,32 +45,32 @@ Note: This project uses `gdate` (GNU date) for consistent timestamp handling. Th
 
 - Process recent videos + generate title/summary:
   ```
-  ./process_videos.zsh
+  ./scripts/process_videos.zsh
   ```
 
 - Transcript-only (skip summary):
   ```
-  ./process_videos.zsh --transcript-only
+  ./scripts/process_videos.zsh --transcript-only
   ```
 
 - Limit by max file size (optional):
   ```
-  ./process_videos.zsh --size 300M
+  ./scripts/process_videos.zsh --size 300M
   ```
 
 - Limit by max age in hours (default 4 hours):
   ```
-  ./process_videos.zsh --age 4
+  ./scripts/process_videos.zsh --age 4
   ```
 
 - Process a different directory:
   ```
-  ./process_videos.zsh --dir ~/Videos
+  ./scripts/process_videos.zsh --dir ~/Videos
   ```
 
 Alias suggestion (add to ~/.zshrc):
 ```
-alias vids='~/projects/AutomateVideos/process_videos.zsh'
+alias vids='~/projects/AutomateVideos/scripts/process_videos.zsh'
 ```
 
 ## Workflow
@@ -100,13 +100,13 @@ This 12-minute neck mobility routine targets the common tension patterns from pr
 
 ## Customization
 
-Script options (process_videos.zsh):
+Script options (scripts/process_videos.zsh):
 - --dir PATH - Source video directory
 - --size SIZE - Max size (e.g., 300M)
 - --age HOURS - Max age in hours
 - --transcript-only - Skip summary generation
 
-AI prompt (youtube_title_summary.sh):
+AI prompt (scripts/youtube_title_summary.sh):
 - Tuned for health/fitness/tai chi/flexibility content
 - Outputs: Title + 3-sentence summary + Bulleted Highlights
 - Uses sonar-pro model
@@ -119,11 +119,11 @@ AI prompt (youtube_title_summary.sh):
 | whisper-cli: command not found | Check PATH includes ~/projects/whisper.cpp/build/bin |
 | No such file: models/ggml-base.en.bin | Run ./models/download-ggml-model.sh base.en |
 | gdate: command not found | Run `brew install coreutils` and re-run setup |
-| Large files skipped | Use ./process_videos.zsh --size to set a new limit |
-| Files skipped due to age | Use ./process_videos.zsh --age to change the window |
+| Large files skipped | Use ./scripts/process_videos.zsh --size to set a new limit |
+| Files skipped due to age | Use ./scripts/process_videos.zsh --age to change the window |
 
 ## Scripts
 
-- process_videos.zsh - Main orchestrator
-- youtube_title_summary.sh - Perplexity API call
+- scripts/process_videos.zsh - Main orchestrator
+- scripts/youtube_title_summary.sh - Perplexity API call
 - test/*.zsh - Smoke and option tests

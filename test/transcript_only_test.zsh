@@ -16,7 +16,7 @@ fi
 
 cp "$test_video" "$downloads_dir"
 
-output="$("$root_dir/process_videos.zsh" --transcript-only)"
+output="$("$root_dir/scripts/process_videos.zsh" --transcript-only)"
 
 rm -f $processed_glob || true
 

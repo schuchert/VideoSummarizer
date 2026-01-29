@@ -23,7 +23,7 @@ if [[ -n "$gdate_path" ]]; then
 fi
 
 output=""
-if output=$(PATH="$tmp_path" PERPLEXITY_API_KEY="dummy" /bin/bash "$root_dir/verify_dependencies.zsh" 2>&1); then
+if output=$(PATH="$tmp_path" PERPLEXITY_API_KEY="dummy" /bin/bash "$root_dir/scripts/verify_dependencies.zsh" 2>&1); then
   rm -rf "$tmp_path"
   echo "Missing ffmpeg test failed: expected failure" >&2
   exit 1

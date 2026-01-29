@@ -11,7 +11,7 @@ touch "$tmp_dir/build/bin/whisper-cli"
 chmod +x "$tmp_dir/build/bin/whisper-cli"
 
 output=""
-if output=$(WHISPER="$tmp_dir" PERPLEXITY_API_KEY="dummy" "$root_dir/verify_dependencies.zsh" 2>&1); then
+if output=$(WHISPER="$tmp_dir" PERPLEXITY_API_KEY="dummy" "$root_dir/scripts/verify_dependencies.zsh" 2>&1); then
   rm -rf "$tmp_dir"
   echo "Missing model test failed: expected failure" >&2
   exit 1

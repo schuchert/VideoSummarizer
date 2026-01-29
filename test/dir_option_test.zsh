@@ -17,7 +17,7 @@ fi
 
 cp "$test_video" "$source_file"
 
-output="$("$root_dir/process_videos.zsh" --dir "$temp_dir")"
+output="$("$root_dir/scripts/process_videos.zsh" --dir "$temp_dir")"
 
 expected_header="#########################################################################"
 expected_file="$source_file"

@@ -6,7 +6,7 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 root_dir="$(cd "$script_dir/.." && pwd)"
 
 output=""
-if output=$(PERPLEXITY_API_KEY= "$root_dir/verify_dependencies.zsh" 2>&1); then
+if output=$(PERPLEXITY_API_KEY= "$root_dir/scripts/verify_dependencies.zsh" 2>&1); then
   echo "Missing API key test failed: expected failure" >&2
   exit 1
 fi

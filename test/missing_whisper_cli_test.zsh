@@ -10,7 +10,7 @@ mkdir -p "$tmp_dir/models"
 touch "$tmp_dir/models/ggml-base.en.bin"
 
 output=""
-if output=$(WHISPER="$tmp_dir" PERPLEXITY_API_KEY="dummy" "$root_dir/verify_dependencies.zsh" 2>&1); then
+if output=$(WHISPER="$tmp_dir" PERPLEXITY_API_KEY="dummy" "$root_dir/scripts/verify_dependencies.zsh" 2>&1); then
   rm -rf "$tmp_dir"
   echo "Missing whisper-cli test failed: expected failure" >&2
   exit 1
