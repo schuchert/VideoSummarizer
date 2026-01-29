@@ -10,6 +10,9 @@ SRC_DIR=~/Downloads
 TRANSCRIPT_ONLY=false
 MAX_SIZE=
 AGE_HOURS=4
+LAST_ERROR=""
+RESULTS=()
+ERROR_DETAILS=()
 
 usage() {
   cat <<'USAGE'
@@ -46,19 +49,38 @@ build_find_args() {
 
 transcribe_file() {
   local file="$1"
-  local tmp_wav
+  local tmp_wav tmp_err tmp_out
 
+  LAST_ERROR=""
   tmp_wav=$(mktemp /tmp/whisper.XXXXXX)
-  ffmpeg -y -nostdin -loglevel error -i "$file" -ar 16000 -ac 1 -f wav "$tmp_wav" 2>/dev/null
-  "$WHISPER/build/bin/whisper-cli" -m "$WHISPER/models/ggml-base.en.bin" -f "$tmp_wav" -nt -np 2>/dev/null
-  rm -f "$tmp_wav"
+  tmp_err=$(mktemp /tmp/whisper.err.XXXXXX)
+  tmp_out=$(mktemp /tmp/whisper.out.XXXXXX)
+
+  if ! ffmpeg -y -nostdin -loglevel error -i "$file" -ar 16000 -ac 1 -f wav "$tmp_wav" 2>"$tmp_err"; then
+    LAST_ERROR=$(<"$tmp_err")
+    rm -f "$tmp_wav" "$tmp_err" "$tmp_out"
+    return 1
+  fi
+
+  if ! "$WHISPER/build/bin/whisper-cli" -m "$WHISPER/models/ggml-base.en.bin" -f "$tmp_wav" -nt -np 2>>"$tmp_err" >"$tmp_out"; then
+    LAST_ERROR=$(<"$tmp_err")
+    rm -f "$tmp_wav" "$tmp_err" "$tmp_out"
+    return 1
+  fi
+
+  cat "$tmp_out"
+  rm -f "$tmp_wav" "$tmp_err" "$tmp_out"
 }
 
 process_file() {
   local file="$1"
-  local transcript summary new_name
+  local transcript summary new_name summary_err
 
-  transcript=$(transcribe_file "$file")
+  if ! transcript=$(transcribe_file "$file"); then
+    RESULTS+=("FAILED|$file|transcription failed")
+    ERROR_DETAILS+=("Transcription failed for $file\n${LAST_ERROR:-Unknown error}")
+    return 0
+  fi
 
   echo "#########################################################################"
   echo "$file"
@@ -66,12 +88,22 @@ process_file() {
   echo "$transcript"
   echo ""
   if [[ "$TRANSCRIPT_ONLY" != true ]]; then
-    summary=$(printf '%s\n' "$transcript" | "$script_dir/youtube_title_summary.sh")
+    summary_err=$(mktemp /tmp/summary.err.XXXXXX)
+    if ! summary=$(printf '%s\n' "$transcript" | "$script_dir/youtube_title_summary.sh" 2>"$summary_err"); then
+      local err
+      err=$(<"$summary_err")
+      rm -f "$summary_err"
+      RESULTS+=("FAILED|$file|summary failed")
+      ERROR_DETAILS+=("Summary failed for $file\n${err:-Unknown error}")
+      return 0
+    fi
+    rm -f "$summary_err"
     echo "$summary"
   fi
 
   new_name=$(as_dated_name "$file")
   mv "$file" "$DEST_DIR/$new_name"
+  RESULTS+=("OK|$file|$DEST_DIR/$new_name")
 }
 
 while [[ $# -gt 0 ]]; do
@@ -141,7 +173,28 @@ fi
 mkdir -p "$DEST_DIR"
 build_find_args
 
-find "${FIND_ARGS[@]}" -print0 | sort -z -r | \
 while IFS= read -r -d '' file; do
   process_file "$file"
-done
+done < <(find "${FIND_ARGS[@]}" -print0 | sort -z -r)
+
+if [[ ${#RESULTS[@]} -gt 0 ]]; then
+  echo ""
+  echo "Summary"
+  for entry in "${RESULTS[@]}"; do
+    IFS='|' read -r status file detail <<<"$entry"
+    if [[ -n "$detail" ]]; then
+      echo "$status: $file -> $detail"
+    else
+      echo "$status: $file"
+    fi
+  done
+fi
+
+if [[ ${#ERROR_DETAILS[@]} -gt 0 ]]; then
+  echo ""
+  echo "Errors"
+  for err in "${ERROR_DETAILS[@]}"; do
+    echo "-----"
+    echo -e "$err"
+  done
+fi
