@@ -1,6 +1,6 @@
 # Video to YouTube Title + Summary Pipeline
 
-Automated workflow for macOS: Processes .mp4 files from ~/Downloads (or a specified directory), extracts transcripts using ffmpeg + local Whisper.cpp, generates YouTube titles/summaries via Perplexity AI API, and organizes output.
+Automated workflow for macOS. Start with the setup script, then run `process_videos.zsh` to summarize recent videos from your downloads folder.
 
 ## Features
 
@@ -10,60 +10,13 @@ Automated workflow for macOS: Processes .mp4 files from ~/Downloads (or a specif
 - AI-generated YouTube titles + summaries optimized for health/fitness/tai chi/flexibility content
 - Moves processed files to ~/Downloads/processed with date suffixes
 
-## Prerequisites (macOS)
-
-1. Install Homebrew (if not already installed):
-   ```
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   ```
-
-2. Install required tools:
-   ```
-   brew install ffmpeg jq git
-   ```
-
-3. Clone and build whisper.cpp:
-   ```
-   cd ~/projects
-   git clone https://github.com/ggerganov/whisper.cpp.git
-   cd whisper.cpp
-   mkdir -p build
-   cd build
-   cmake ..
-   make -j
-   ```
-
-   Download the model (matching the script):
-   ```
-   cd ~/projects/whisper.cpp
-   ./models/download-ggml-model.sh base.en
-   ```
-
-4. Get Perplexity API key:
-   - Sign up/log in at Perplexity.ai
-   - Go to API settings (https://www.perplexity.ai/settings/api)
-   - Generate/copy your API key
-
-5. Configure API key (add to ~/.zshrc):
-   ```
-   export PERPLEXITY_API_KEY="pplx-your_actual_key_here"
-   source ~/.zshrc
-   ```
-
-   Test the key:
-   ```
-   curl -sS https://api.perplexity.ai/chat/completions \
-     -H "Authorization: Bearer $PERPLEXITY_API_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{"model": "sonar-small-chat", "messages": [{"role": "user", "content": "Say hello"}]}' \
-     | jq -r '.choices[0].message.content'
-   ```
-
 ## Setup (scripted)
 
 ```
 ./setup/setup.zsh
 ```
+
+Prefer to do the steps manually? Follow [Manual Setup](MANUAL_SETUP.md).
 
 ## Usage
 
@@ -104,13 +57,14 @@ alias vids='~/projects/AutomateVideos/process_videos.zsh'
                                                               -> ~/Downloads/processed/*.mp4 (date suffixed)
 ```
 
-## Sample Output
+## Example Output (TestVideo.mp4)
 
 ```
 #########################################################################
-~/Downloads/video.mp4
+~/Downloads/TestVideo.mp4
 
-[Full transcript text here...]
+this is going to stimulate the nerve endings in your neck and release a lot of tension
+and this is going to help you relax
 
 Neck Mobility Routine for Desk Workers - 12 Minutes
 
