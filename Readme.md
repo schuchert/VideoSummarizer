@@ -18,6 +18,8 @@ Automated workflow for macOS. Start with the setup script, then run `process_vid
 
 Prefer to do the steps manually? Follow [Manual Setup](MANUAL_SETUP.md).
 
+Note: This project uses `gdate` (GNU date) for consistent timestamp handling. The setup script installs it via Homebrew `coreutils`.
+
 ## Perplexity API Key
 
 1. Create an API key at https://www.perplexity.ai/settings/api
@@ -116,6 +118,7 @@ AI prompt (youtube_title_summary.sh):
 | PERPLEXITY_API_KEY is not set | Add to ~/.zshrc and source ~/.zshrc |
 | whisper-cli: command not found | Check PATH includes ~/projects/whisper.cpp/build/bin |
 | No such file: models/ggml-base.en.bin | Run ./models/download-ggml-model.sh base.en |
+| gdate: command not found | Run `brew install coreutils` and re-run setup |
 | Large files skipped | Use ./process_videos.zsh --size to set a new limit |
 | Files skipped due to age | Use ./process_videos.zsh --age to change the window |
 

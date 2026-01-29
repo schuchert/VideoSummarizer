@@ -9,7 +9,7 @@ These steps mirror the setup script. Use these if you prefer manual control.
 
 2. Install required tools:
    ```
-   brew install ffmpeg jq git
+   brew install ffmpeg jq git coreutils
    ```
 
 3. Clone and build whisper.cpp:
