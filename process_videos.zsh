@@ -28,6 +28,78 @@ Options:
 USAGE
 }
 
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -t|--transcript-only)
+        TRANSCRIPT_ONLY=true
+        shift
+        ;;
+      -s|--size)
+        if [[ -n "${2:-}" && ! "$2" =~ ^- ]]; then
+          MAX_SIZE="$2"
+          shift 2
+        else
+          MAX_SIZE=""
+          shift
+        fi
+        ;;
+      --size=*)
+        MAX_SIZE="${1#*=}"
+        shift
+        ;;
+      -a|--age)
+        if [[ -z "${2:-}" || "$2" == -* ]]; then
+          echo "Missing value for $1" >&2
+          usage >&2
+          exit 2
+        fi
+        AGE_HOURS="$2"
+        shift 2
+        ;;
+      -d|--dir)
+        if [[ -z "${2:-}" || "$2" == -* ]]; then
+          echo "Missing value for $1" >&2
+          usage >&2
+          exit 2
+        fi
+        SRC_DIR="$2"
+        shift 2
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        echo "Unknown option: $1" >&2
+        usage >&2
+        exit 2
+        ;;
+    esac
+  done
+}
+
+validate_args() {
+  if ! [[ "$AGE_HOURS" =~ ^[0-9]+$ ]]; then
+    echo "Age must be an integer number of hours: $AGE_HOURS" >&2
+    exit 2
+  fi
+}
+
+normalize_paths() {
+  SRC_DIR="${SRC_DIR/#\~/$HOME}"
+  DEST_DIR="$SRC_DIR/processed"
+}
+
+run_dependency_checks() {
+  export WHISPER
+  if [[ "$TRANSCRIPT_ONLY" == true ]]; then
+    "$script_dir/verify_dependencies.zsh" --transcript-only
+  else
+    "$script_dir/verify_dependencies.zsh"
+  fi
+}
+
 as_dated_name() {
   local file_name="$1"
   local date_str
@@ -107,95 +179,46 @@ process_file() {
   RESULTS+=("OK|$file|$DEST_DIR/$new_name")
 }
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    -t|--transcript-only)
-      TRANSCRIPT_ONLY=true
-      shift
-      ;;
-    -s|--size)
-      if [[ -n "${2:-}" && ! "$2" =~ ^- ]]; then
-        MAX_SIZE="$2"
-        shift 2
+process_files() {
+  mkdir -p "$DEST_DIR"
+  build_find_args
+
+  while IFS= read -r -d '' file; do
+    process_file "$file"
+  done < <(find "${FIND_ARGS[@]}" -print0 | sort -z -r)
+}
+
+print_summary() {
+  if [[ ${#RESULTS[@]} -gt 0 ]]; then
+    echo ""
+    echo "Summary"
+    for entry in "${RESULTS[@]}"; do
+      IFS='|' read -r status file detail <<<"$entry"
+      if [[ -n "$detail" ]]; then
+        echo "$status: $file -> $detail"
       else
-        MAX_SIZE=""
-        shift
+        echo "$status: $file"
       fi
-      ;;
-    --size=*)
-      MAX_SIZE="${1#*=}"
-      shift
-      ;;
-    -a|--age)
-      if [[ -z "${2:-}" || "$2" == -* ]]; then
-        echo "Missing value for $1" >&2
-        usage >&2
-        exit 2
-      fi
-      AGE_HOURS="$2"
-      shift 2
-      ;;
-    -d|--dir)
-      if [[ -z "${2:-}" || "$2" == -* ]]; then
-        echo "Missing value for $1" >&2
-        usage >&2
-        exit 2
-      fi
-      SRC_DIR="$2"
-      shift 2
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1" >&2
-      usage >&2
-      exit 2
-      ;;
-  esac
-done
+    done
+  fi
 
-if ! [[ "$AGE_HOURS" =~ ^[0-9]+$ ]]; then
-  echo "Age must be an integer number of hours: $AGE_HOURS" >&2
-  exit 2
-fi
+  if [[ ${#ERROR_DETAILS[@]} -gt 0 ]]; then
+    echo ""
+    echo "Errors"
+    for err in "${ERROR_DETAILS[@]}"; do
+      echo "-----"
+      echo -e "$err"
+    done
+  fi
+}
 
-SRC_DIR="${SRC_DIR/#\~/$HOME}"
-DEST_DIR="$SRC_DIR/processed"
+main() {
+  parse_args "$@"
+  validate_args
+  normalize_paths
+  run_dependency_checks
+  process_files
+  print_summary
+}
 
-export WHISPER
-if [[ "$TRANSCRIPT_ONLY" == true ]]; then
-  "$script_dir/verify_dependencies.zsh" --transcript-only
-else
-  "$script_dir/verify_dependencies.zsh"
-fi
-
-mkdir -p "$DEST_DIR"
-build_find_args
-
-while IFS= read -r -d '' file; do
-  process_file "$file"
-done < <(find "${FIND_ARGS[@]}" -print0 | sort -z -r)
-
-if [[ ${#RESULTS[@]} -gt 0 ]]; then
-  echo ""
-  echo "Summary"
-  for entry in "${RESULTS[@]}"; do
-    IFS='|' read -r status file detail <<<"$entry"
-    if [[ -n "$detail" ]]; then
-      echo "$status: $file -> $detail"
-    else
-      echo "$status: $file"
-    fi
-  done
-fi
-
-if [[ ${#ERROR_DETAILS[@]} -gt 0 ]]; then
-  echo ""
-  echo "Errors"
-  for err in "${ERROR_DETAILS[@]}"; do
-    echo "-----"
-    echo -e "$err"
-  done
-fi
+main "$@"
