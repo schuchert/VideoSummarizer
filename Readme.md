@@ -18,6 +18,27 @@ Automated workflow for macOS. Start with the setup script, then run `process_vid
 
 Prefer to do the steps manually? Follow [Manual Setup](MANUAL_SETUP.md).
 
+## Perplexity API Key
+
+1. Create an API key at https://www.perplexity.ai/settings/api
+2. Add the key to your shell config (zsh):
+   ```
+   export PERPLEXITY_API_KEY="pplx-your_actual_key_here"
+   source ~/.zshrc
+   ```
+3. (Optional) Verify the key (prints success/failure):
+   ```
+   if curl -sS https://api.perplexity.ai/chat/completions \
+     -H "Authorization: Bearer $PERPLEXITY_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"model": "sonar-small-chat", "messages": [{"role": "user", "content": "Say hello"}]}' \
+     | jq -e -r '.choices[0].message.content' >/dev/null; then
+     echo "Perplexity API key OK"
+   else
+     echo "Perplexity API key failed"
+   fi
+   ```
+
 ## Usage
 
 - Process recent videos + generate title/summary:
