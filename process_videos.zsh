@@ -6,6 +6,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 WHISPER="${WHISPER:-$HOME/projects/whisper.cpp}"
 WHISPER="${WHISPER%/}"
+DATE_CMD="${DATE_CMD:-gdate}"
 SRC_DIR=~/Downloads
 TRANSCRIPT_ONLY=false
 MAX_SIZE=
@@ -30,7 +31,7 @@ USAGE
 as_dated_name() {
   local file_name="$1"
   local date_str
-  date_str=$(date +%Y-%m-%d)
+  date_str=$("$DATE_CMD" +%Y-%m-%d)
 
   local name="${file_name##*/}"       # basename (e.g., video.mp4)
   local dir_name="${name%.*}"         # name without extension (e.g., video)

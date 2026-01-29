@@ -11,7 +11,7 @@ ensure_brew() {
 }
 
 ensure_brew_deps() {
-  brew install ffmpeg jq git cmake
+  brew install ffmpeg jq git cmake coreutils
 }
 
 ensure_whisper() {

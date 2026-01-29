@@ -17,7 +17,7 @@ fi
 
 cp "$test_video" "$downloads_dir"
 
-past_time=$(date -v-6H +"%Y%m%d%H%M")
+past_time=$(gdate -d "6 hours ago" +"%Y%m%d%H%M")
 touch -t "$past_time" "$downloaded_file"
 
 output="$("$root_dir/process_videos.zsh" --age 1)"

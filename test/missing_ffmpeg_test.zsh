@@ -8,6 +8,7 @@ root_dir="$(cd "$script_dir/.." && pwd)"
 tmp_path=$(mktemp -d /tmp/path-test.XXXXXX)
 jq_path=$(command -v jq || true)
 curl_path=$(command -v curl || true)
+gdate_path=$(command -v gdate || true)
 
 if [[ -n "$jq_path" ]]; then
   ln -s "$jq_path" "$tmp_path/jq"
@@ -15,6 +16,10 @@ fi
 
 if [[ -n "$curl_path" ]]; then
   ln -s "$curl_path" "$tmp_path/curl"
+fi
+
+if [[ -n "$gdate_path" ]]; then
+  ln -s "$gdate_path" "$tmp_path/gdate"
 fi
 
 output=""
