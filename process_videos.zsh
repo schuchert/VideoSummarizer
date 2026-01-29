@@ -4,7 +4,8 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-WHISPER=~/projects/whisper.cpp/
+WHISPER="${WHISPER:-$HOME/projects/whisper.cpp}"
+WHISPER="${WHISPER%/}"
 SRC_DIR=~/Downloads
 TRANSCRIPT_ONLY=false
 MAX_SIZE=
@@ -129,6 +130,13 @@ fi
 
 SRC_DIR="${SRC_DIR/#\~/$HOME}"
 DEST_DIR="$SRC_DIR/processed"
+
+export WHISPER
+if [[ "$TRANSCRIPT_ONLY" == true ]]; then
+  "$script_dir/verify_dependencies.zsh" --transcript-only
+else
+  "$script_dir/verify_dependencies.zsh"
+fi
 
 mkdir -p "$DEST_DIR"
 build_find_args
