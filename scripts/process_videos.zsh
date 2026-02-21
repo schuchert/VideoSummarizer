@@ -182,45 +182,47 @@ process_file() {
   local file="$1"
   local transcript extracted summary summary_err
 
+  # Transcribe
   if ! transcript=$(transcribe_file "$file"); then
     RESULTS+=("FAILED|$file|transcription failed")
     ERROR_DETAILS+=("Transcription failed for $file\n${LAST_ERROR:-Unknown error}")
     return 0
   fi
 
+  # Extract (now always succeeds with fallback)
   extracted="$transcript"
   if [[ "$EXTRACT_FITNESS" == true ]]; then
     ensure_extract_script
-    if ! extracted=$(printf '%s\n' "$transcript" | "$script_dir/extract_fitness_snippets.zsh"); then
-      RESULTS+=("FAILED|$file|no fitness content")
-      return 0
-    fi
-    echo "[EXTRACTED FITNESS SNIPPETS]"
+    extracted=$(printf '%s\n' "$transcript" | "$script_dir/extract_fitness_snippets.zsh") || extracted="$transcript"
   fi
 
+  # Move file IMMEDIATELY after extraction (success/fallback)
+  local new_name
+  new_name=$(as_dated_name "$file")
+  mv "$file" "$DEST_DIR/$new_name"
+  RESULTS+=("OK|$file|$DEST_DIR/$new_name")
+
+  # Print extracted transcript
   echo "#########################################################################"
   echo "$file"
   echo ""
   echo "$extracted"
   echo ""
+
+  # Summary is bonus (not blocking)
   if [[ "$TRANSCRIPT_ONLY" != true ]]; then
     summary_err=$(mktemp /tmp/summary.err.XXXXXX)
-    if ! summary=$(printf '%s\n' "$extracted" | "$script_dir/youtube_title_summary.sh" 2>"$summary_err"); then
+    if ! summary=$(printf '%s\n' "$extracted" | "$script_dir/youtube_title_summary.zsh" 2>"$summary_err"); then
       local err
       err=$(<"$summary_err")
       rm -f "$summary_err"
-      RESULTS+=("FAILED|$file|summary failed")
+      RESULTS+=("WARN|$file|summary failed")
       ERROR_DETAILS+=("Summary failed for $file\n${err:-Unknown error}")
       return 0
     fi
     rm -f "$summary_err"
     echo "$summary"
   fi
-
-  local new_name
-  new_name=$(as_dated_name "$file")
-  mv "$file" "$DEST_DIR/$new_name"
-  RESULTS+=("OK|$file|$DEST_DIR/$new_name")
 }
 
 process_files() {
