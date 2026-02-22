@@ -1,41 +1,38 @@
-#!/usr/bin/env zsh
-# extract_paradox_snippets.zsh - Full-spectrum Paradox Diaries extractor
-# Replaces extract_fitness_snippets.zsh
-
+#!/usr/bin/env bash
 set -euo pipefail
 
-transcript=$(cat)
-
-# Somatic/movement
-extracted_somatic=$(echo "$transcript" | grep -iE \
-  "(shak|bounce|qigong|tai.*chi|bagua|circle walk|wu chi|isometric|pancake|split|hip flexor|stretch|flex|pose|dantian|sacrum|fontanel|qi|chi)" \
-  | sed 's/^/ /g')
-
-# HRV/physiology
-extracted_hrv=$(echo "$transcript" | grep -iE \
-  "(HRV|rmssd|heart rate|vagus|parasympathetic|sympathetic|polar|elite)" \
-  | sed 's/^/ /g')
-
-# Dev/AI/process
-extracted_dev=$(echo "$transcript" | grep -iE \
-  "(cursor|perplex|llm|tdd|test|pipe|cli|python|repo|github|logging|websocket|bluetooth|twitchy|noise std|interpolat)" \
-  | sed 's/^/ /g')
-
-# Philosophy/systems
-extracted_philo=$(echo "$transcript" | grep -iE \
-  "(paradox|emptiness|triad|observer|mirror|flywheel|system|model|feedback|attractor|collapse|awareness)" \
-  | sed 's/^/ /g')
-
-# Combine + dedupe + trim
-combined=$(printf '%s\n%s\n%s\n%s\n' \
-  "$extracted_somatic" "$extracted_hrv" "$extracted_dev" "$extracted_philo" \
-  | awk '!seen[$0]++' \
-  | sed '/^[[:space:]]*$/d' \
-  | head -c 12000)
-
-# Fallback: full transcript if no matches
-if [[ -z "$combined" ]]; then
-  combined=$(echo "$transcript" | sed '/^[[:space:]]*$/d' | head -c 12000)
+if [[ -z "${PERPLEXITY_API_KEY:-}" ]]; then
+  echo "PERPLEXITY_API_KEY is not set" >&2
+  exit 1
 fi
 
-echo "$combined"
+# Read full transcript from stdin
+transcript=$(cat)
+
+# JSON-escape the transcript safely
+escaped_transcript=$(jq -Rn --arg t "$transcript" '$t')
+
+# Build the user prompt
+user_prompt=$'Create a YouTube title and summary for this health/fitness video transcript.\n\n'\
+$'Context: Videos are about deep flexibility (in the style of YogaBody Science of Stretching), tai chi, bagua, liuhebafa, qi gong, yoga, sometimes software, dogs, and related topics.\n\n'\
+$'Use my teacher-observer style.\n\n'\
+$'Format:\n'\
+$'- First line: YouTube title\n'\
+$'- Then a 3-sentence summary, no bullet points.\n\n'\
+$'- Then Bulleted Highlights.\n\n'\
+$'TRANSCRIPT:\n'"$transcript"
+
+# Build JSON request
+json_request=$(jq -n --arg content "$user_prompt" '{
+  model: "sonar-pro",
+  messages: [
+    {role: "user", content: $content}
+  ]
+}')
+
+# Call Perplexity API
+curl -sS https://api.perplexity.ai/chat/completions \
+  -H "Authorization: Bearer $PERPLEXITY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "$json_request" \
+  | jq -r '.choices[0].message.content // empty'
