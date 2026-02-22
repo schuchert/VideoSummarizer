@@ -1,0 +1,136 @@
+1
+00:00:00,000 --> 00:00:00,040
+
+
+2
+00:00:00,040 --> 00:00:02,080
+What you see on the bottom of the screen
+
+3
+00:00:03,960 --> 00:00:05,840
+is the updated version of the heart rate
+
+4
+00:00:05,840 --> 00:00:06,560
+monitor, or
+
+5
+00:00:06,840 --> 00:00:07,840
+heart rate variability
+
+6
+00:00:08,480 --> 00:00:09,280
+and heart rate,
+
+7
+00:00:09,760 --> 00:00:11,760
+and it's got it tuned to be sort of
+
+8
+00:00:11,760 --> 00:00:13,320
+smoother as opposed to
+
+9
+00:00:14,320 --> 00:00:14,960
+more jittery. It's
+
+10
+00:00:15,680 --> 00:00:16,880
+just gonna be running throughout.
+
+11
+00:00:17,120 --> 00:00:18,800
+My heart rate starting, or my heart rate
+
+12
+00:00:18,800 --> 00:00:20,080
+variability is starting at
+
+13
+00:00:21,360 --> 00:00:22,760
+51 tonight or something like that.
+
+14
+00:00:22,760 --> 00:00:23,840
+I'm not sure what it shows right now, I
+
+15
+00:00:23,840 --> 00:00:26,160
+can't quite see it, but I'll work on that next,
+
+16
+00:00:26,880 --> 00:00:27,360
+and
+
+17
+00:00:28,000 --> 00:00:28,880
+we'll see what it does.
+
+18
+00:00:29,520 --> 00:00:30,240
+Last night,
+
+19
+00:00:31,040 --> 00:00:33,200
+my heart rate variability improved a bit.
+
+20
+00:00:33,200 --> 00:00:34,800
+I don't remember what the numbers were, but
+
+21
+00:00:35,360 --> 00:00:35,480
+it
+
+22
+00:00:35,760 --> 00:00:36,560
+doesn't really matter.
+
+23
+00:00:36,800 --> 00:00:37,200
+I've got
+
+24
+00:00:37,560 --> 00:00:38,160
+it logged.
+
+25
+00:00:38,480 --> 00:00:40,320
+And again, the whole purpose of this is
+
+26
+00:00:40,640 --> 00:00:42,520
+I discovered accidentally that the thing
+
+27
+00:00:42,520 --> 00:00:43,360
+I'm about to do
+
+28
+00:00:43,600 --> 00:00:44,960
+seems to be really good.
+
+29
+00:00:44,960 --> 00:00:47,440
+It sort of seems to give you mental boost,
+
+30
+00:00:47,760 --> 00:00:48,640
+cardio boost,
+
+31
+00:00:49,680 --> 00:00:50,960
+helps me with sleep, et cetera.
+
+32
+00:00:50,960 --> 00:00:52,240
+And it's a very simple activity.
+
+33
+00:00:52,480 --> 00:00:54,160
+And let's go ahead and get started. So
+
+34
+00:00:54,160 --> 00:00:54,300
+
+

@@ -24,7 +24,7 @@ Options:
   -t, --transcript-only    Only print transcript (skip summary)
   -e, --no-extract         Skip fitness snippet extraction
   -s, --size[=SIZE]        Max size for find (e.g., 3M)
-  -a, --age HOURS          Max age in hours (default: 4)
+  -a, --age HOURS          Max age in hours (default: 4). Use 0 for all .mp4 files.
   -d, --dir PATH           Source directory (default: ~/Downloads)
   -h, --help               Show this help
 USAGE
@@ -87,7 +87,7 @@ parse_args() {
 
 validate_args() {
   if ! [[ "$AGE_HOURS" =~ '^[0-9]+$' ]]; then
-    echo "Age must be an integer number of hours: $AGE_HOURS" >&2
+    echo "Age must be an integer number of hours (or 0 for all): $AGE_HOURS" >&2
     exit 2
   fi
 }
@@ -119,8 +119,35 @@ as_dated_name() {
   echo "$new_name"
 }
 
+# Return 0 if file was modified, created, or had ctime change within the last AGE_HOURS.
+# AGE_HOURS=0 means no filter: include all .mp4 files.
+file_is_recent() {
+  local file="$1"
+  [[ "$AGE_HOURS" -eq 0 ]] && return 0
+  local now mtime birth ctime max_sec
+  now=$(date +%s)
+  max_sec=$((AGE_HOURS * 3600))
+  # macOS/BSD: stat -f "%m %B %c" = mtime, birth time, ctime (epoch)
+  if mtime=$(stat -f %m "$file" 2>/dev/null); then
+    birth=$(stat -f %B "$file" 2>/dev/null) || birth=0
+    ctime=$(stat -f %c "$file" 2>/dev/null) || ctime=0
+  # Linux/GNU: stat -c "%Y %W %Z" = mtime, birth time, ctime
+  elif mtime=$(stat -c %Y "$file" 2>/dev/null); then
+    birth=$(stat -c %W "$file" 2>/dev/null) || birth=0
+    ctime=$(stat -c %Z "$file" 2>/dev/null) || ctime=0
+  else
+    return 1
+  fi
+  [[ $((now - mtime)) -le $max_sec ]] && return 0
+  # When testing age-only (e.g. PROCESS_VIDEOS_AGE_MTIME_ONLY=1), skip birth/ctime so touch doesn't make file "recent"
+  [[ -n "${PROCESS_VIDEOS_AGE_MTIME_ONLY:-}" ]] && return 1
+  [[ ${birth:-0} -gt 0 && $((now - birth)) -le $max_sec ]] && return 0
+  [[ ${ctime:-0} -gt 0 && $((now - ctime)) -le $max_sec ]] && return 0
+  return 1
+}
+
 build_find_args() {
-  FIND_ARGS=("$SRC_DIR" -maxdepth 1 -name "*.mp4" -mmin "-$((AGE_HOURS * 60))")
+  FIND_ARGS=("$SRC_DIR" -maxdepth 1 -name "*.mp4")
   if [[ -n "${MAX_SIZE:-}" ]]; then
     FIND_ARGS+=(-size "-$MAX_SIZE")
   fi
@@ -128,27 +155,35 @@ build_find_args() {
 
 transcribe_file() {
   local file="$1"
-  local tmp_wav tmp_err tmp_out
+  local tmp_wav tmp_err tmp_err_whisper tmp_out
 
   LAST_ERROR=""
   tmp_wav=$(mktemp /tmp/whisper.XXXXXX)
   tmp_err=$(mktemp /tmp/whisper.err.XXXXXX)
+  tmp_err_whisper=$(mktemp /tmp/whisper.err2.XXXXXX)
   tmp_out=$(mktemp /tmp/whisper.out.XXXXXX)
 
   if ! ffmpeg -y -nostdin -loglevel error -i "$file" -ar 16000 -ac 1 -f wav "$tmp_wav" 2>"$tmp_err"; then
     LAST_ERROR=$(<"$tmp_err")
-    rm -f "$tmp_wav" "$tmp_err" "$tmp_out"
+    rm -f "$tmp_wav" "$tmp_err" "$tmp_err_whisper" "$tmp_out"
     return 1
   fi
 
-  if ! "$WHISPER/build/bin/whisper-cli" -m "$WHISPER/models/ggml-base.en.bin" -f "$tmp_wav" -nt -np 2>>"$tmp_err" >"$tmp_out"; then
-    LAST_ERROR=$(<"$tmp_err")
-    rm -f "$tmp_wav" "$tmp_err" "$tmp_out"
+  if ! "$WHISPER/build/bin/whisper-cli" -m "$WHISPER/models/ggml-base.en.bin" -f "$tmp_wav" -nt -np 2>"$tmp_err_whisper" >"$tmp_out"; then
+    LAST_ERROR=$(<"$tmp_err_whisper")
+    rm -f "$tmp_wav" "$tmp_err" "$tmp_err_whisper" "$tmp_out"
     return 1
   fi
 
-  cat "$tmp_out"
-  rm -f "$tmp_wav" "$tmp_err" "$tmp_out"
+  # Prefer stdout; some whisper-cli builds print transcript to stderr
+  if [[ -s "$tmp_out" ]]; then
+    cat "$tmp_out"
+  elif [[ -s "$tmp_err_whisper" ]]; then
+    cat "$tmp_err_whisper"
+  else
+    cat "$tmp_out"
+  fi
+  rm -f "$tmp_wav" "$tmp_err" "$tmp_err_whisper" "$tmp_out"
 }
 
 process_file() {
@@ -166,6 +201,18 @@ process_file() {
   extracted="$transcript"
   if [[ "$EXTRACT_FITNESS" == true ]]; then
     extracted=$(printf '%s\n' "$transcript" | "$script_dir/extract_fitness_snippets.zsh") || extracted="$transcript"
+  fi
+
+  # No text to work with: don't move file, don't call summary
+  if [[ -z "${extracted//[[:space:]]/}" ]]; then
+    RESULTS+=("FAILED|$file|no speech detected / empty transcript")
+    ERROR_DETAILS+=("No text from $file — whisper produced no transcript. File left in place.")
+    echo "#########################################################################"
+    echo "$file"
+    echo ""
+    echo "(no transcript — file not moved)"
+    echo ""
+    return 0
   fi
 
   # Move file IMMEDIATELY after extraction (success/fallback)
@@ -201,9 +248,17 @@ process_files() {
   mkdir -p "$DEST_DIR"
   build_find_args
 
+  local count=0
   while IFS= read -r -d '' file; do
+    file_is_recent "$file" || continue
     process_file "$file"
+    count=$((count + 1))
   done < <(find "${FIND_ARGS[@]}" -print0 | sort -z -r)
+
+  if [[ $count -eq 0 ]]; then
+    echo "No .mp4 files in $SRC_DIR added or modified in the last $AGE_HOURS hour(s)." >&2
+    echo "Use -a HOURS to change the age filter (e.g. -a 24 for last 24h, -a 0 for all)." >&2
+  fi
 }
 
 print_summary() {
