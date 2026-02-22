@@ -97,33 +97,6 @@ normalize_paths() {
   DEST_DIR="$SRC_DIR/processed"
 }
 
-ensure_extract_script() {
-  local extract_script="$script_dir/extract_fitness_snippets.zsh"
-  if [[ ! -f "$extract_script" ]]; then
-    cat >"$extract_script" <<'EOF'
-#!/usr/bin/env zsh
-set -euo pipefail
-
-transcript=$(cat)
-
-# Extract somatic/philosophical fitness lines (update patterns periodically)
-extracted=$(echo "$transcript" | grep -iE \
-  "(shak|flex|stretch|HRV|qigong|tai.*chi|bagua|liuhebafa|paradox|singularity|neural|flare|somatic|emptiness|collapse|energy|stability|practice|movement|awareness|observe|gyro|mandelbrot|hrv)" \
-  | grep -v -iE "(software|code|git|java|gradle)" \
-  | sed 's/^/ /g' | tr -s '\n' '\n' | head -c 8000)
-
-if [[ -z "$extracted" ]]; then
-  echo "No fitness/somatic content detected in transcript." >&2
-  exit 1
-fi
-
-echo "$extracted"
-EOF
-    chmod +x "$extract_script"
-    echo "Created $extract_script (edit grep patterns for new themes)"
-  fi
-}
-
 run_dependency_checks() {
   export WHISPER
   if [[ "$TRANSCRIPT_ONLY" == true ]]; then
@@ -192,7 +165,6 @@ process_file() {
   # Extract (now always succeeds with fallback)
   extracted="$transcript"
   if [[ "$EXTRACT_FITNESS" == true ]]; then
-    ensure_extract_script
     extracted=$(printf '%s\n' "$transcript" | "$script_dir/extract_fitness_snippets.zsh") || extracted="$transcript"
   fi
 
@@ -268,3 +240,4 @@ main() {
 }
 
 main "$@"
+
