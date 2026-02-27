@@ -9,13 +9,15 @@ fi
 transcript=$(cat)
 escaped_transcript=$(jq -Rn --arg t "$transcript" '$t')
 
-user_prompt=$'Create a YouTube title and summary for this video transcript in the Paradox Diaries style (somatic practice + philosophy + software metaphors).\\n\\n'\
-$'Context: Blends biology/epigenetics, nervous system training, flexibility/Qigong/Tai Chi, with code analogies (Java/JVM). Teacher-observer tone.\\n\\n'\
-$'Format:\\n'\
-$'- First line: YouTube title\\n'\
-$'- Then a 3-sentence summary, no bullet points.\\n'\
-$'- Then Bulleted Highlights.\\n\\n'\
-$'TRANSCRIPT:\\n'"$transcript"
+user_prompt=$'Create a YouTube title and summary for this video transcript in the Paradox Diaries style (somatic practice + philosophy + software metaphors).\n\n'\
+$'Context: Blends biology/epigenetics, nervous system training, flexibility/Qigong/Tai Chi, with code analogies (Java/JVM). Teacher-observer tone.\n\n'\
+$'Output CLEAN: No [citations], [web:1], footnotes, or source refs. Pure YouTube copy-paste ready.\n\n'\
+$'Format:\n'\
+$'- First line: YouTube title\n'\
+$'- Then a 3-sentence summary, no bullet points.\n'\
+$'- Then Bulleted Highlights.\n\n'\
+$'EXTRACT: Pose name/description → somatic benefits → code metaphor (e.g. "unwinds like git rebase"). If no philosophy, infer: shaking/breath/vagus/epigenetics.\n\n'\
+$'TRANSCRIPT:\n'"$escaped_transcript"
 
 json_request=$(jq -n --arg content "$user_prompt" '{
   model: "sonar-pro",
